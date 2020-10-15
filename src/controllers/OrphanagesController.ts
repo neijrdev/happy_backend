@@ -1,6 +1,8 @@
 import {Request, Response} from 'express'
 import { getRepository } from 'typeorm';
 import Orphanage from './../models/Orphanage';
+import * as Yup from 'yup';
+
 import OrphanageView from '../views/orphanages_views';
 
 export default {
@@ -32,8 +34,9 @@ export default {
       about,
       instructions,
       opening_hours,
-      open_on_weekends } = request.body;
-  
+      open_on_weekends,
+    } = request.body;
+
     const OrphanagesRepository = getRepository(Orphanage);
 
     const requestImages = request.files as Express.Multer.File[];
@@ -42,9 +45,7 @@ export default {
      return {path: image.filename}
     })
 
-
-  
-    const orphanage = OrphanagesRepository.create({
+    const data = {
       name,
       latitude,
       longitude,
@@ -52,11 +53,32 @@ export default {
       instructions,
       opening_hours,
       open_on_weekends,
-      images
-    });
-  
+      images,
+    };
+
+    const schema = Yup.object().shape({
+      name: Yup.string().required(),
+      latitude: Yup.number().required(),
+      longitude: Yup.number().required(),
+      about:Yup.string().required().max(300),
+      instructions:Yup.string().required(),
+      opening_hours:Yup.string().required(),
+      open_on_weekends:Yup.boolean().required(), 
+      images: Yup.array(
+        Yup.object().shape({
+          path: Yup.string().required()
+        })
+      ),
+    })
+
+    await schema.validate(data, {
+      abortEarly: false,
+    })
+
+    const orphanage = OrphanagesRepository.create(data);
+
     await OrphanagesRepository.save(orphanage);
-  
+
     return response.status(201).json(orphanage);
   }
 }
