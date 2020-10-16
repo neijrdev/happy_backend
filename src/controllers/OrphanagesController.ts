@@ -18,10 +18,15 @@ export default {
   async show (request: Request, response: Response){
     try {
       const id = request.params.id
+
       const OrphanagesRepository = getRepository(Orphanage);
-      const orphanage = await OrphanagesRepository.findOneOrFail(id)
+      const orphanage = await OrphanagesRepository.findOneOrFail(id,{
+        relations: ['images']
+      })
       return response.json(OrphanageView.render(orphanage))
+
     } catch (error) {
+      console.log(error)
       return response.status(404).json({error:`id not found`})
     }
   },
@@ -52,7 +57,7 @@ export default {
       about,
       instructions,
       opening_hours,
-      open_on_weekends,
+      open_on_weekends:open_on_weekends==="true",
       images,
     };
 
